@@ -1,0 +1,8 @@
+condition: ppo_baseline
+algo: ppo
+metadata:
+  order: 6
+  label: "PPO baseline (clip=0.20, gae_lambda=0.95)"
+  comparisons:
+    - {group: ppo_clip, value: 0.20, baseline: true}
+    - {group: ppo_lambda, value: 0.95, baseline: true}

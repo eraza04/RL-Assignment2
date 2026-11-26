@@ -1,0 +1,91 @@
+schema_version: 1
+algo: dqn
+
+# Environment and preprocessing. ALE itself runs at frameskip=1; the only
+# action-repeat/max-pool layer is MaxAndSkipExternal(skip=4).
+env:
+  id: ALE/Breakout-v5
+  frameskip: 1
+  repeat_action_probability: 0.0
+  full_action_space: false
+  render_mode: null
+  max_and_skip: 4
+  grayscale: true
+  resize: [84, 84]
+  frame_stack: 4
+  fire_on_reset_and_life_loss: true
+  fire_action: 1
+  clip_rewards: true
+  clip_mode: sign
+  obs_dtype: uint8
+
+wrappers:
+  chain:
+    - "MaxAndSkipExternal(skip=4, max_pool_last_two_frames=true)"
+    - "FireOnResetAndLifeLoss(fire_action=1, override_next_action_after_life_loss=true)"
+    - "WarpFrame84x84(gray, INTER_AREA)"
+    - "FrameStack(num_stack=4, dtype=uint8)"
+    - "ClipRewardSign(raw_reward_in_info=true)"
+    - "RawEpisodeStats(uses_info.raw_reward=true)"
+    - "Monitor"
+  evaluation_chain:
+    - "MaxAndSkipExternal(skip=4, max_pool_last_two_frames=true)"
+    - "FireOnResetAndLifeLoss(fire_action=1, override_next_action_after_life_loss=true)"
+    - "WarpFrame84x84(gray, INTER_AREA)"
+    - "FrameStack(num_stack=4, dtype=uint8)"
+    - "RawEpisodeStats(uses_raw_reward=true)"
+    - "Monitor"
+  notes: >
+    Auto-FIRE sits ABOVE the single external max-and-skip layer, so an
+    auto-FIRE action is four ALE frames and one agent timestep, exactly like
+    every other external action. Reset FIRE is executed inside reset and is
+    reported as a reset event, not as an extra agent step. Evaluation uses no
+    ClipRewardSign and no EpisodicLife wrapper; Monitor sees raw rewards.
+
+model:
+  policy: CnnPolicy
+  policy_kwargs:
+    features_extractor_kwargs:
+      features_dim: 512
+  # Modest fixed capacity for all full DQN conditions: 5,000 SB3 transitions
+  # = 269.26 MiB of replay arrays on this host. The original 20,000 entries
+  # needed 1,077.04 MiB alone; see README memory section for the measurement.
+  buffer_size: 5000
+  learning_starts: 20000
+  batch_size: 32
+  gamma: 0.99
+  learning_rate: 0.0001
+  train_freq: 4
+  gradient_steps: 1
+  target_update_interval: 5000
+  exploration_fraction: 0.25
+  exploration_initial_eps: 1.0
+  exploration_final_eps: 0.10
+  max_grad_norm: 10.0
+  optimize_memory_usage: false
+  device: cpu
+
+training:
+  total_timesteps: 500000
+  log_interval: 1000
+  checkpoint_interval: 50000
+  update_log_stride: 10
+  verbose: 1
+
+evaluation:
+  episodes: 5
+  seed_base: 1001
+  deterministic: true
+  record_video: true
+  video_max_steps: 600
+  video_fps: 15
+  safety_max_steps: null
+
+probe:
+  seed: 20261119
+  count: 32
+  warmup_steps: 4
+  action_cycle: [2, 3, 0]
+  step_stride: 1
+
+metadata: {}

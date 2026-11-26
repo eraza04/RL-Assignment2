@@ -1,0 +1,9 @@
+condition: ppo_lambda_099
+algo: ppo
+model:
+  gae_lambda: 0.99
+metadata:
+  order: 10
+  label: "PPO GAE lambda 0.99"
+  comparisons:
+    - {group: ppo_lambda, value: 0.99, baseline: false}

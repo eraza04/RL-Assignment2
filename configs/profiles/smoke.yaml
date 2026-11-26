@@ -1,0 +1,37 @@
+profile: smoke
+common:
+  training:
+    verbose: 1
+  evaluation:
+    episodes: 2
+    record_video: true
+    video_max_steps: 300
+dqn:
+  # Short but still long enough that the baseline target interval (5000)
+  # fires at least once and checkpoints/eval happen after real updates.
+  model:
+    buffer_size: 2000
+    learning_starts: 200
+  training:
+    total_timesteps: 6000
+    checkpoint_interval: 3000
+    log_interval: 250
+    update_log_stride: 1
+  evaluation:
+    seed_base: 1001
+    video_fps: 15
+ppo:
+  model:
+    n_steps: 512
+    batch_size: 64
+    n_epochs: 4
+  training:
+    # 4000 is deliberately not a multiple of n_steps=512, so the smoke
+    # evidence demonstrates PPO rollout overshoot (actual=4096).
+    total_timesteps: 4000
+    checkpoint_interval: 2048
+    log_interval: 512
+    update_log_stride: 1
+  evaluation:
+    seed_base: 2001
+    video_fps: 20

@@ -1,0 +1,22 @@
+profile: full
+common:
+  training:
+    total_timesteps: 500000
+    checkpoint_interval: 50000
+  evaluation:
+    episodes: 5
+    record_video: true
+dqn:
+  model:
+    buffer_size: 5000
+    learning_starts: 20000
+  training:
+    log_interval: 1000
+    update_log_stride: 10
+ppo:
+  model:
+    n_steps: 2048
+    n_epochs: 10
+  training:
+    log_interval: 2048
+    update_log_stride: 1

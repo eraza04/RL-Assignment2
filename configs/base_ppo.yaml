@@ -1,0 +1,64 @@
+schema_version: 1
+algo: ppo
+
+# Standard BipedalWalker-v3 MLP PPO. The task is a continuous-control
+# contrast to Breakout and intentionally uses no reward clipping and no
+# observation/reward normalization, so evaluation returns are raw.
+env:
+  id: BipedalWalker-v3
+  render_mode: null
+  normalize_observations: false
+  normalize_rewards: false
+
+wrappers:
+  chain:
+    - "RawEpisodeStats(uses_raw_reward=false)"
+    - "Monitor"
+  evaluation_chain:
+    - "RawEpisodeStats(uses_raw_reward=false)"
+    - "Monitor"
+  notes: >
+    BipedalWalker-v3 supplies a 24-value observation and four continuous
+    motor commands in [-1, 1]. No VecNormalize is applied; PPO sees raw
+    observations and raw rewards. The environment's native TimeLimit is the
+    only truncation rule (1600 steps).
+
+model:
+  policy: MlpPolicy
+  policy_kwargs:
+    net_arch:
+      pi: [64, 64]
+      vf: [64, 64]
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.20
+  clip_range_vf: null
+  normalize_advantage: true
+  ent_coef: 0.0
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  device: cpu
+
+training:
+  total_timesteps: 500000
+  log_interval: 2048
+  checkpoint_interval: 50000
+  update_log_stride: 1
+  verbose: 1
+
+evaluation:
+  episodes: 5
+  seed_base: 2001
+  deterministic: true
+  record_video: true
+  video_max_steps: 600
+  video_fps: 20
+  safety_max_steps: null
+
+probe: null
+
+metadata: {}

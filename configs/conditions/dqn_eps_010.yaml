@@ -1,0 +1,9 @@
+condition: dqn_eps_010
+algo: dqn
+model:
+  exploration_fraction: 0.10
+metadata:
+  order: 4
+  label: "DQN epsilon decay fraction 0.10"
+  comparisons:
+    - {group: dqn_exploration, value: 0.10, baseline: false}

@@ -1,0 +1,8 @@
+condition: dqn_baseline
+algo: dqn
+metadata:
+  order: 1
+  label: "DQN baseline (target=5000, epsilon_fraction=0.25)"
+  comparisons:
+    - {group: dqn_target, value: 5000, baseline: true}
+    - {group: dqn_exploration, value: 0.25, baseline: true}

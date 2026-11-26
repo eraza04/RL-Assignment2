@@ -1,0 +1,9 @@
+condition: dqn_target_1000
+algo: dqn
+model:
+  target_update_interval: 1000
+metadata:
+  order: 2
+  label: "DQN target update every 1000"
+  comparisons:
+    - {group: dqn_target, value: 1000, baseline: false}

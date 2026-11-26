@@ -1,0 +1,9 @@
+condition: ppo_clip_040
+algo: ppo
+model:
+  clip_range: 0.40
+metadata:
+  order: 8
+  label: "PPO clip range 0.40"
+  comparisons:
+    - {group: ppo_clip, value: 0.40, baseline: false}
