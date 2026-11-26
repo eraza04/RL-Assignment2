@@ -7,11 +7,29 @@ Small, readable Stable-Baselines3 implementation of the two assigned experiments
 | Visual discrete control | `ALE/Breakout-v5` | DQN + `CnnPolicy` (SB3 `NatureCNN`) | target update interval, epsilon decay fraction |
 | Continuous control | `BipedalWalker-v3` | PPO + `MlpPolicy` | clip range, GAE lambda |
 
-This worktree contains the implementation, resolved configs, checkpoint-reload
-evaluation, diagnostic plots, deterministic wrapper tests, and fresh short
-verification evidence. **No 500,000-step training run and no full experiment
-queue was started.** Full and smoke schedules are deliberately different, and
-the current host did not demonstrate enough free RAM for a full DQN launch.
+This repository contains the training and evaluation code, experiment
+configurations, diagnostic plotting scripts, and deterministic wrapper tests
+for CSE 482 Assignment 2.
+
+## Completed experiments
+
+The main experiment completed all ten full-profile conditions with training
+seed 0. The five DQN conditions ran on Google Colab with CUDA and completed
+500,000 agent steps each. The five PPO conditions ran on the Windows CPU
+setup. Each requested 500,000 steps and completed 501,760 when PPO finished
+its last rollout. Checkpoint means use five fixed evaluation episodes per
+task.
+
+| Task | Seed-0 result | Setting |
+| --- | ---: | --- |
+| Breakout, best final mean | 34.00 at 500,000 steps | Target update every 1,000 steps, 25% epsilon decay |
+| Breakout, highest checkpoint mean | 37.00 at 450,000 steps | Target update every 5,000 steps, 40% epsilon decay |
+| Walker, best final mean | 301.58 at 501,760 steps | PPO clip range 0.40, GAE lambda 0.95 |
+
+A separate PPO follow-up repeated clip ranges 0.20 and 0.40 using training
+seeds 1 and 2. Across seeds 0, 1, and 2, clip 0.40 finished higher twice.
+Clip 0.20 finished higher on seed 2. The full run artifacts and assignment
+report are stored separately from this source repository.
 
 ## Contents
 
@@ -42,16 +60,12 @@ scripts/
   remediate_evidence.py     fresh isolated evidence driver
 ```
 
-## Environment used here
+## Windows CPU environment
 
-The host had only the WindowsApps Python alias and no WSL/`nvidia-smi`. A
-workspace-local standalone `uv` and `uv`-managed CPython 3.11 were installed
-under `.tools/`; all packages and caches are workspace-local. The final
-interpreter is:
-
-```text
-C:\Users\ezanr\orca\workspaces\rl-a2\rl-a2-implementation\.venv\Scripts\python.exe
-```
+The local smoke checks and full PPO runs used a workspace-local Python 3.11
+environment. The interpreter path relative to the project root is
+`.venv\Scripts\python.exe`. The full DQN runs used the separate Colab CUDA
+handoff.
 
 Versions recorded in the fresh manifests: Python 3.11.18, Stable-Baselines3
 2.7.0, Gymnasium 1.2.1, PyTorch 2.15.0+cpu, NumPy 2.4.6, ale-py 0.12.1,
@@ -130,7 +144,7 @@ gameplay clips. Smoke scores are implementation evidence only, not scientific
 results. The DQN final score of 0 means the 6,000-step run never cleared a
 brick.
 
-## Full experiment commands (not run here)
+## Full experiment reproduction commands
 
 The ten conditions run **serially**. There is no `--overwrite` option: a
 non-empty run directory is refused, and existing evidence is never deleted or
@@ -139,21 +153,21 @@ matched seeds across all ten conditions.
 
 ```powershell
 # One matched seed: 10 conditions x 500,000 agent steps
-.\.venv\Scripts\python.exe scripts\run_all.py --profile full --seeds 0 --output-root artifacts\full_seed0
+.\.venv\Scripts\python.exe scripts\run_all.py --profile full --seeds 0 --output-root artifacts\reproduction_seed0
 
 # Three matched seeds: 30 runs, still serial
-.\.venv\Scripts\python.exe scripts\run_all.py --profile full --seeds 0 1 2 --output-root artifacts\full_seeds012
+.\.venv\Scripts\python.exe scripts\run_all.py --profile full --seeds 0 1 2 --output-root artifacts\reproduction_seeds012
 
 # One condition / one seed directly
-.\.venv\Scripts\python.exe -m rl_a2.train --condition dqn_target_1000 --profile full --seed 0 --output-root artifacts\full_seed0
+.\.venv\Scripts\python.exe -m rl_a2.train --condition dqn_target_1000 --profile full --seed 0 --output-root artifacts\reproduction_dqn_target_1000_seed0
 ```
 
 Full profile: 500,000 requested agent timesteps per condition per seed;
 checkpoints every 50,000 requested steps (PPO's first rollout boundary at or
 after each boundary, e.g. 51,200); 5 full-game evaluation episodes per
-periodic/final checkpoint. All other settings are shared. A full DQN launch is
-gated by currently available RAM (see below) and will refuse to start when the
-verified headroom is insufficient. **These queues were not started here.**
+periodic/final checkpoint. Within each one-factor comparison, the remaining
+settings are shared. The Windows DQN launcher checks available RAM before
+starting. The completed CUDA runs used a separate Colab output root.
 
 ## Conditions and one-factor map
 
@@ -443,12 +457,11 @@ timeout(float32)`. `n_steps=1` allocates no discount array.
   from the fresh smoke's 1,504.7 MiB peak RSS minus 107.7 MiB replay
   (1,397.0 MiB). Projected full DQN process peak is **1,669.3 MiB**.
 * With 25% slack, the launch gate requires **2,086.6 MiB currently available**
-  RAM. At the final diagnostic check only 1,617.2 MiB was available (deficit
-  469.4 MiB); the evidence driver saw 1,997.6 MiB, and smoke starts saw less.
-  Sustained headroom under queue conditions was not demonstrated. Do not
-  launch a full DQN run on this host without freeing substantially more RAM,
-  rechecking the gate immediately before launch, and running a short
-  representative full-profile pilot first.
+  RAM. At the original Windows diagnostic check, 1,617.2 MiB was
+  available. The evidence driver saw 1,997.6 MiB, and the smoke starts saw
+  less. The completed full DQN runs used Google Colab with CUDA. For future
+  Windows reproductions, check available RAM at launch and run a short
+  representative full-profile pilot.
 * Throughput numbers in this README are training-only and exclude periodic
   evaluation and checkpoint saves; exact scopes are in each manifest and in
   `smoke_summary.json`.
@@ -468,19 +481,14 @@ and final overhead timed separately is required before relying on any ETA.
 
 ## Known limitations
 
-* Full 500k runs and three-seed replication were not executed; all scientific
-  comparisons must be produced with the serial commands above after the RAM
-  and pilot prerequisites are met.
+* The ten-condition main experiment used one training seed. The three-seed
+  follow-up covers PPO clip ranges 0.20 and 0.40.
 * Smoke profiles change buffer capacity, learning starts, PPO rollout length
   and epochs, checkpoint cadence, and eval episode count. They are not directly
   comparable to full runs; only full-profile runs are the intended experiment.
 * The DQN evaluation cap is ALE's native frame cap; `ale-py` does not expose a
   Python `getScore` in this version, so raw reward is the score definition.
-* CPU-only PyTorch and low, variable host RAM make DQN slow; the full DQN
-  launch gate currently fails.
 * No `VecNormalize` for BipedalWalker: this keeps the setup standard/readable
   but may change PPO sample efficiency relative to normalized implementations.
 * Determinism is seeded (SB3/PyTorch/Gymnasium) but not bitwise-guaranteed
   across library versions or CPU thread scheduling.
-* The 4–5 page synthesis, behavioral clip analysis, and comparative scientific
-  claims remain outstanding; the smoke clips are implementation checks only.
